@@ -1,0 +1,9 @@
+[Unit]
+Description=socket for mrund container runtime daemon
+
+[Socket]
+ListenStream=/run/mrund.sock
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target
