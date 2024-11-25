@@ -1,0 +1,14 @@
+[Unit]
+Description=mpod application container engine
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/tmp/mrund-tmp/mrund
+StandardInput=socket
+Restart=always
+User=root
+Environment=ENV_VAR=value
+
+[Install]
+WantedBy=multi-user.target
