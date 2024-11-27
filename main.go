@@ -1,11 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"net"
+	"github.com/mikeyfennelly1/mrund/api"
+	"github.com/mikeyfennelly1/mrund/utils"
 	"os"
-	"syscall"
 )
 
 const (
@@ -13,85 +12,22 @@ const (
 	MRUND_SOCKET_PATH = "/run/mrund.sock"
 )
 
+// ensures that the user running the binary has the
+// necessary permissions and starts server
 func main() {
-	hasPermissions := checkEUID(MUST_BE_EUID)
+	hasPermissions := utils.CheckEUID(MUST_BE_EUID)
 	if hasPermissions == false {
 		fmt.Printf("You dont have the necessary permissions. \nEUID: %d \n", os.Geteuid())
 		os.Exit(1)
 	}
 
+	// delete socket path if it exists already
 	err := deleteSocketPathIfExists(MRUND_SOCKET_PATH)
-	if err != nil {
-		fmt.Printf("Unable to delete socket at path: %s\n", MRUND_SOCKET_PATH)
-		os.Exit(1)
-	}
+	utils.ExitIfErr(&err, fmt.Sprintf("Unable to delete socket at path: %s\n", MRUND_SOCKET_PATH))
 
+	// create listening server on unix socket at path MRUND_SOCKET_PATH
 	listener, err := tryCreateUnixSocket(MRUND_SOCKET_PATH)
-	if err != nil {
-		fmt.Printf("Unable to create socket at path %s\n", MRUND_SOCKET_PATH)
-		os.Exit(1)
-	}
+	utils.ExitIfErr(&err, fmt.Sprintf("Unable to create socket at path %s\n", MRUND_SOCKET_PATH))
 
-	startListener(listener)
-}
-
-func startListener(listener *net.Listener) {
-	for {
-		conn, connectionErr := (*listener).Accept()
-		if connectionErr != nil {
-			fmt.Printf("Connection error: %s\n", connectionErr)
-			continue
-		}
-
-		go handleConnection(conn)
-	}
-}
-
-func tryCreateUnixSocket(socketPath string) (*net.Listener, error) {
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		fmt.Printf("Error creating socket: %v\n", err)
-		return nil, err
-	}
-
-	fmt.Printf("Listening on socket: %s\n", socketPath)
-	return &listener, nil
-}
-
-func checkEUID(euidToCheck int) bool {
-	euid := syscall.Geteuid()
-	if euid != euidToCheck {
-		return false
-	}
-	return true
-}
-
-func deleteSocketPathIfExists(socketPath string) error {
-	_, err := os.Stat(socketPath)
-	socketExists := err == nil
-	if socketExists {
-		err := os.Remove(socketPath)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	return err
-}
-
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	reader := bufio.NewReader(conn)
-	for {
-		message, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Printf("Error reading from connection %s\n", err)
-			return
-		}
-
-		fmt.Printf("Received message: %s", message)
-		response := fmt.Sprintf("Echo: %s", message)
-		conn.Write([]byte(response))
-	}
+	api.StartListener(listener)
 }
