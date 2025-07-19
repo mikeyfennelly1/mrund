@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/mikeyfennelly1/mrund/api"
+	"github.com/mikeyfennelly1/mrund/container"
 	"github.com/mikeyfennelly1/mrund/utils"
 	"os"
 )
@@ -22,12 +23,14 @@ func main() {
 	}
 
 	// delete socket path if it exists already
-	err := deleteSocketPathIfExists(MRUND_SOCKET_PATH)
-	utils.ExitIfErr(&err, fmt.Sprintf("Unable to delete socket at path: %s\n", MRUND_SOCKET_PATH))
+	err := api.DeleteSocketPathIfExists(MRUND_SOCKET_PATH)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to delete socket at path: %s\n", MRUND_SOCKET_PATH))
+	}
 
 	// create listening server on unix socket at path MRUND_SOCKET_PATH
-	listener, err := tryCreateUnixSocket(MRUND_SOCKET_PATH)
+	//listener, err := api.TryCreateUnixSocket(MRUND_SOCKET_PATH)
 	utils.ExitIfErr(&err, fmt.Sprintf("Unable to create socket at path %s\n", MRUND_SOCKET_PATH))
 
-	api.StartListener(listener)
+	container.CreateVethPairAndBridge()
 }

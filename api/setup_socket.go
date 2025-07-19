@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func tryCreateUnixSocket(socketPath string) (*net.Listener, error) {
+func TryCreateUnixSocket(socketPath string) (*net.Listener, error) {
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		fmt.Printf("Error creating socket: %v\n", err)
@@ -17,7 +17,7 @@ func tryCreateUnixSocket(socketPath string) (*net.Listener, error) {
 	return &listener, nil
 }
 
-func deleteSocketPathIfExists(socketPath string) error {
+func DeleteSocketPathIfExists(socketPath string) error {
 	_, err := os.Stat(socketPath)
 	socketExists := err == nil
 	if socketExists {
@@ -27,5 +27,5 @@ func deleteSocketPathIfExists(socketPath string) error {
 		}
 		return nil
 	}
-	return err
+	return nil
 }
